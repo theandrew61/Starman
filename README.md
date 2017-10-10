@@ -29,7 +29,7 @@ Although still being actively developed, the current way to activate the starman
 *   Super Paper Mario
 
 ## Installation
-1.  Download the mod
+1.  Download the mod from [https://www.gta5-mods.com/scripts/starman-invincibility](5Mods/GTA5 Mods)
 2.  Make sure you have the latest versions of
     *   ScriptHookV
     *   ScriptHookVDotNet
@@ -37,6 +37,12 @@ Although still being actively developed, the current way to activate the starman
     *   NAudio is included
 3.  Extract the .dll file and the _starman_ folder to the _scripts_ folder in the GTA V folder. If the _scripts_ folder does not exist, create it. The _starman_ folder must be properly extracted and contain its 17 files.
 4.  Run the game or push Insert if the game is already running. Have fun!
+
+## Building
+1. Download or clone the repo
+2. Do something in Visual Studio
+3. Include these references (ScriptHookVDotNet, NativeUI, NAudio)
+4. Build then move the .dll to *Grand Theft Auto V\scripts*
 
 ## Lastly
 Mario and the aforementioned Mario games are registered trademarks of Nintendo and are owned by Nintendo.
