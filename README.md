@@ -34,7 +34,7 @@ Although still being actively developed, the current way to activate the starman
     *   ScriptHookVDotNet
     *   NativeUI
     *   NAudio is included
-3.  Extract the .dll file and the *starman* folder to the *scripts* folder in the GTA V folder. If the *scripts* folder does not exist, create it. The *starman* folder must be properly extracted and contain its 17 files.
+3.  Extract everything and the *starman* folder to the *scripts* folder in the GTA V folder. If the *scripts* folder does not exist, create it. The *starman* folder must be properly extracted and contain its 17 files.
 4.  Run the game or push Insert if the game is already running. Have fun!
 
 ## Building
