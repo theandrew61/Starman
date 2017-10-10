@@ -7,7 +7,7 @@ Particles spawn. You run faster. You take no damage. You are fireproof. A meter 
 
 **Starman lasts 20 seconds. You will not gain any stars for a cop dying as a result of you being invincible.**
 
-Although still being actively developed, the current way to activate the starman is to push *Numpad 9*.
+Starman's activation key can be configured. ***By default, the NumPad 9 key activates starman.*** To do that, go to the *scripts* folder and edit the *Starman.ini* file and change "105" to any number based on a key. A full [list can be found here](http://cherrytree.at/misc/vk.htm).
 
 ## Starman themes featured in this mod are from these games:
 *   Mario Kart 7
