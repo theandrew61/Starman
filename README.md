@@ -1,5 +1,4 @@
 # Starman
-A mod for Grand Theft Auto V that grants you invincibility like in Mario games.
 
 ## Description
 This is my first mod! This mod grants you invincibility like in the Mario games.
@@ -29,13 +28,13 @@ Although still being actively developed, the current way to activate the starman
 *   Super Paper Mario
 
 ## Installation
-1.  Download the mod from (https://www.gta5-mods.com/scripts/starman-invincibility)[5Mods/GTA5 Mods]
+1.  Download the mod from [5Mods](https://www.gta5-mods.com/scripts/starman-invincibility)
 2.  Make sure you have the latest versions of
     *   ScriptHookV
     *   ScriptHookVDotNet
     *   NativeUI
     *   NAudio is included
-3.  Extract the .dll file and the _starman_ folder to the _scripts_ folder in the GTA V folder. If the _scripts_ folder does not exist, create it. The _starman_ folder must be properly extracted and contain its 17 files.
+3.  Extract the .dll file and the *starman* folder to the *scripts* folder in the GTA V folder. If the *scripts* folder does not exist, create it. The *starman* folder must be properly extracted and contain its 17 files.
 4.  Run the game or push Insert if the game is already running. Have fun!
 
 ## Building
