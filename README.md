@@ -29,7 +29,7 @@ Although still being actively developed, the current way to activate the starman
 *   Super Paper Mario
 
 ## Installation
-1.  Download the mod from [https://www.gta5-mods.com/scripts/starman-invincibility](5Mods/GTA5 Mods)
+1.  Download the mod from (https://www.gta5-mods.com/scripts/starman-invincibility)[5Mods/GTA5 Mods]
 2.  Make sure you have the latest versions of
     *   ScriptHookV
     *   ScriptHookVDotNet
