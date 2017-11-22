@@ -1,7 +1,7 @@
 # Starman
 
 ## Description
-This is my first mod! This mod grants you invincibility like in the Mario games.
+This is my first mod! This mod grants you invincibility like in Mario games.
 
 Particles spawn. You run faster. You take no damage. You are fireproof. A meter shows in the bottom right showing how much star power is left. You do not ragdoll. Any NPC that comes near you instantly dies. Your vehicle (if in one) is fireproof. It takes no damage. Any other vehicle that you hit instantly explodes.
 
