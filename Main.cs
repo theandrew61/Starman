@@ -1,51 +1,63 @@
-using System;
-using System.Drawing;
-using System.Windows.Forms;
-using System.Threading.Tasks;
 using GTA;
 using GTA.Native;
+using GTA.Math;
 using NativeUI;
 using NAudio.Wave;
-using GTA.Math;
+using System;
+using System.Drawing;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace Starman {
 
     public class Main : Script {
 
-        private static string[] starmen = new string[] { "smb", "smw", "smk", "sm64", "sm64m", "mk64", "mksc", "mkdd", "mkds", "spm", "mkwii", "nsmbwii", "msm", "smg2", "mk7", "sm3dl", "mk8" };
+        private static string[] starmanThemes = new string[] { "smb", "smw", "smk", "sm64", "sm64m", "mk64", "mksc", "mkdd", "mkds", "spm", "mkwii", "nsmbwii", "msm", "smg2", "mk7", "sm3dl", "mk8", "smw2", "smrpg", "smbd", "smas", "sma4", "sma2", "sma", "mss", "msma" };
 
         private ScriptSettings ss;
         private Player player = Game.Player;
-        private AudioFileReader audioReader;
-        private WaveOutEvent waveOut;
+        private AudioFileReader audioReader = null;
+        private WaveOutEvent waveOut = null;
         private bool activated = false;
         private Random rnd = new Random();
-        private DateTime janFirst1970 = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
         private DateTime dateTimeThatStarmanWasInitiated;
+        private string previousTheme;
+        private DateTime janFirst1970 = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc); // this acts as an initial/unset value for dateTimeThatStarmanWasInitiated
         private TimerBarPool tbPool = new TimerBarPool();
-        private BarTimerBar btb;
+        private BarTimerBar btb = null;
         private TimeSpan elapsedTime;
+        private bool hasReloaded = false;
+        private float volume = 0.4f;
 
         // modify these
-        private int starmanTime = 20; // seconds
-        private int fadeOutTime = 3; // seconds
+        private int starmanTime = 20; // seconds, I recommend: 0 < x <= 20
+        private int fadeOutTime = 3; // seconds, I recommend: 0 < x <= 5
         private float destructionRadius = 6.0f; // game units
 
         public Main() {
             Tick += onTick;
             KeyUp += onKeyUp;
 
-            dateTimeThatStarmanWasInitiated = janFirst1970;
+            dateTimeThatStarmanWasInitiated = janFirst1970; // now we set the value
 
             ss = ScriptSettings.Load(@"scripts\Starman.ini");
+            if(ss.GetValue("Settings", "JumpBoost") == null) {
+                ss.SetValue("Settings", "JumpBoost", "true");
+            }
             if(ss.GetValue("Settings", "Key") == null) {
                 ss.SetValue("Settings", "Key", "105");
-                ss.Save();
             }
+            if(ss.GetValue("Settings", "VehiclePower") == null) {
+                ss.SetValue("Settings", "VehiclePower", "20");
+            }
+            if(ss.GetValue("Settings", "Volume") == null) {
+                ss.SetValue("Settings", "Volume", "0.4");
+            }
+            ss.Save();
         }
 
         private void onTick(object sender, EventArgs e) {
-            if(activated) {
+            if(activated && !hasReloaded) {
                 // how long has starman been activated?
                 if(dateTimeThatStarmanWasInitiated != janFirst1970) {
                     elapsedTime = DateTime.Now - dateTimeThatStarmanWasInitiated;
@@ -54,7 +66,6 @@ namespace Starman {
                 // update the progress bar
                 if(btb != null && elapsedTime.TotalSeconds <= starmanTime) {
                     btb.Percentage = 1 - ((float)elapsedTime.TotalSeconds / starmanTime);
-                    btb.Label = "STARMAN POWER";
                     float hue = ((float)elapsedTime.TotalSeconds / starmanTime);
                     btb.ForegroundColor = ExtendedColor.HSL2RGB(hue, 1, 0.5);
                     btb.BackgroundColor = ExtendedColor.HSL2RGB(hue, 1, 0.3);
@@ -82,24 +93,27 @@ namespace Starman {
                         vehicle.CanTiresBurst = false;
                         vehicle.CanWheelsBreak = false;
                         vehicle.EngineCanDegrade = false;
-                        vehicle.EnginePowerMultiplier = 10;
-                        vehicle.Health = 1000;
+                        vehicle.IsBulletProof = true;
+                        vehicle.IsExplosionProof = true;
                         vehicle.IsFireProof = true;
 
                         // explode on contact
-                        Vehicle[] vehicles = World.GetNearbyVehicles(player.Character.Position, destructionRadius);
+                        Vehicle[] vehicles = World.GetNearbyVehicles(vehicle.Position, destructionRadius);
                         if(vehicles.Length > 0) {
                             foreach(Vehicle v in vehicles) {
                                 if(v != player.Character.CurrentVehicle) {
-                                    if(v.ClassType != VehicleClass.Boats && v.ClassType != VehicleClass.Helicopters && v.ClassType != VehicleClass.Planes && v.ClassType != VehicleClass.Trains) {
-                                        if(player.Character.CurrentVehicle.IsTouching(v)) {
-                                            v.Explode();
-                                        }
+                                    if(player.Character.CurrentVehicle.IsTouching(v)) {
+                                        v.Explode();
                                     }
                                 }
                             }
                         }
                     } else {
+                        // super jump
+                        if(bool.Parse(ss.GetValue("Settings", "JumpBoost"))) {
+                            player.SetSuperJumpThisFrame();
+                        }
+
                         // kill closeby peds
                         Ped[] peds = World.GetNearbyPeds(player.Character.Position, destructionRadius - 4.5f);
                         if(peds.Length > 0) {
@@ -112,27 +126,52 @@ namespace Starman {
                     }
                 }
             }
+            // if the mod has been reloaded
+            if(hasReloaded && activated) {
+                Wait(3000);
+                hasReloaded = false;
+                UI.Notify("The cooldown for the Starman mod is over.");
+                EndStarman();
+            }
         }
 
         private void onKeyUp(object sender, KeyEventArgs e) {
-            if(e.KeyValue == int.Parse(ss.GetValue("Settings", "Key")) && !activated) {
-                dateTimeThatStarmanWasInitiated = DateTime.Now;
-                StartStarman();
+            if(e.KeyValue == int.Parse(ss.GetValue("Settings", "Key"))) {
+                if(!hasReloaded && !activated) {
+                    dateTimeThatStarmanWasInitiated = DateTime.Now;
+                    StartStarman();
+                } else if(hasReloaded) {
+                    UI.Notify("There is a 1-5 second cooldown for the Starman mod after pressing Insert.");
+                }
+            }
+            if(e.KeyCode == Keys.Insert && activated) { // if the mods are reloaded
+                hasReloaded = true;
             }
         }
 
         #region Starman
         private void StartStarman() {
-            audioReader = new AudioFileReader("scripts/starman/" + starmen[rnd.Next(1, starmen.Length)] + ".mp3");
-            audioReader.Volume = 0.4f;
+            string chosenTheme = starmanThemes[rnd.Next(1, starmanThemes.Length)];
+            while(chosenTheme == previousTheme) {
+                chosenTheme = starmanThemes[rnd.Next(1, starmanThemes.Length)];
+            }
+            previousTheme = chosenTheme;
+
+            // get the settings when Starman is activated
+            ScriptSettings tss = ScriptSettings.Load(@"scripts\Starman.ini");
+            volume = float.Parse(tss.GetValue("Settings", "Volume", "0.4"));
+            tss = null;
+
+            audioReader = new AudioFileReader("scripts/starman/" + chosenTheme + ".mp3");
+            audioReader.Volume = volume;
             DelayFadeOutSampleProvider fadeOut = new DelayFadeOutSampleProvider(audioReader);
-            fadeOut.BeginFadeOut(20000 - (fadeOutTime * 1000), fadeOutTime * 1000);
+            fadeOut.BeginFadeOut((starmanTime * 1000) - (fadeOutTime * 1000), fadeOutTime * 1000);
             waveOut = new WaveOutEvent();
             waveOut.PlaybackStopped += waveOut_PlaybackStopped;
             waveOut.Init(fadeOut);
             waveOut.Play();
 
-            btb = new BarTimerBar("STARMAN TIME");
+            btb = new BarTimerBar("STARMAN POWER");
             btb.Percentage = 1;
             btb.ForegroundColor = ExtendedColor.HSL2RGB(0, 1, 0.5);
             btb.BackgroundColor = ExtendedColor.HSL2RGB(0, 1, 0.3);
@@ -159,29 +198,37 @@ namespace Starman {
             if(activated && audioReader != null && waveOut != null) {
                 audioReader.Dispose();
                 waveOut.Dispose();
+                audioReader = null;
+                waveOut = null;
             }
         }
 
         private void SetInvulnerability(bool i) {
-            player.Character.CanBeDraggedOutOfVehicle = !i;
-            player.Character.CanBeShotInVehicle = !i;
-            player.Character.CanRagdoll = !i;
-            player.Character.CanSufferCriticalHits = !i;
-            player.Character.IsBulletProof = i;
-            player.Character.IsExplosionProof = i;
-            player.Character.IsFireProof = i;
-            SetInvincible(i);
-            SetSprint(i ? 1.49f : 1.0f);
-            SetSwim(i ? 1.49f : 1.0f);
+            if(player != null) {
+                if(player.Character != null) {
+                    player.Character.CanBeDraggedOutOfVehicle = !i;
+                    player.Character.CanBeShotInVehicle = !i;
+                    player.Character.CanRagdoll = !i;
+                    player.Character.CanSufferCriticalHits = !i;
+                    player.Character.IsBulletProof = i;
+                    player.Character.IsExplosionProof = i;
+                    player.Character.IsFireProof = i;
+                }
+                SetInvincible(i);
+                SetSprint(i ? 1.49f : 1.0f);
+                SetSwim(i ? 1.49f : 1.0f);
+            }
 
             if(player.Character.IsInVehicle()) {
                 Vehicle vehicle = player.Character.CurrentVehicle;
-                vehicle.Health = 1000;
+                Function.Call(Hash.SET_ENTITY_INVINCIBLE, vehicle, i);
                 vehicle.CanBeVisiblyDamaged = !i;
                 vehicle.CanTiresBurst = !i;
                 vehicle.CanWheelsBreak = !i;
                 vehicle.EngineCanDegrade = !i;
-                vehicle.EnginePowerMultiplier = i ? 10 : 1;
+                vehicle.EnginePowerMultiplier = (i ? int.Parse(ss.GetValue("Settings", "VehiclePower")) : 1);
+                vehicle.IsBulletProof = i;
+                vehicle.IsExplosionProof = i;
                 vehicle.IsFireProof = !i;
             }
         }
@@ -202,13 +249,6 @@ namespace Starman {
             Function.Call(Hash.REQUEST_NAMED_PTFX_ASSET, new InputArgument[] { argOneTwo });
             Function.Call(Hash._SET_PTFX_ASSET_NEXT_CALL, new InputArgument[] { argOneTwo });
             Function.Call(Hash.START_PARTICLE_FX_NON_LOOPED_ON_ENTITY, argThree, entity, 0, 0, 0, 0, 0, 0, scale, false, false, false);
-            // Function.Call<int>(Hash.START_PARTICLE_FX_NON_LOOPED_AT_COORD, argThree, entity.Position.X, entity.Position.Y, entity.Position.Z, 0, 0, 0, scale, 0, 0, 0);
-        }
-
-        private void Print(string text, int time = 2500) {
-            Function.Call(Hash._0xB87A37EEB7FAA67D, "STRING");
-            Function.Call(Hash._ADD_TEXT_COMPONENT_STRING, text);
-            Function.Call(Hash._0x9D77056A530643F6, time, 1);
         }
     }
 }
