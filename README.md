@@ -1,4 +1,4 @@
-# Starman
+# Starman (version 2.0)
 
 ## Description
 This is my first mod! This mod grants you invincibility like in Mario games.
